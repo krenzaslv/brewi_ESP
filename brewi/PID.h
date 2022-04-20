@@ -10,7 +10,7 @@ public:
 
 
   float PIDGain(float temp, float dt){
-    return k_p_*error(temp) + k_i_*SerrorDt(temp, float dt) + k_d_*derror_dt(temp, float dt);
+    return config.k_p*error(temp) + config.k_i*SerrorDt(temp, float dt) + config.k_d*derror_dt(temp, float dt);
   }
 
   float error(float temp){
@@ -27,16 +27,12 @@ public:
 
   float SerrorDt(float temp, float dt){
     integralBuffer += dt*error(temp);
-    return 0;
+    return integralBuffer;
   }
 
-  int 
-
   int scalePIDToDutyCycle(float temp, float dt){
-    float e = (PIDGain(float temp, dt)- scale_min )(scale_max-scale_min);
-    return e*max_duty_cycle;
-    
-
+    float e = (PIDGain(float temp, dt)- config.scale_min )(config.scale_max-config.scale_min);
+    return e*config.maxDutyCycles;
   }
 
 private:
@@ -44,10 +40,4 @@ private:
   float targetTmp = 22;
   float derivativeBuffer = targetTmp;
   float integralBuffer = 0;
-
-  const int scale_min = -500;
-  const int scale_max = 500;
-
-  const int max_duty_cycle = 20; //seconds
-
 } pid;

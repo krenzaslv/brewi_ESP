@@ -4,42 +4,26 @@
 
 struct State{
 
-  void setOverridePIDFromJson(String json){
-    DynamicJsonDocument doc = deserialize(json);
-    temperature = doc["temperature"];
-  }
 
-  void setKPFromJson(String json){
-    DynamicJsonDocument doc = deserialize(json);
-    k_p = doc["k_p"];
-  }
-
-  void setKIFromJson(String json){
-    DynamicJsonDocument doc = deserialize(json);
-    k_i = doc["k_i"];
-  }
-
-  void setKDFromJson(String json){
-    DynamicJsonDocument doc = deserialize(json);
-    k_d = doc["k_d"];
-  }
-
-  void setTargetTemperature(String json){
-    DynamicJsonDocument doc = deserialize(json);
-    targetTemperature = doc["targetTemperature"];
-  }
-
-
-  void setHeatingElementOnFromJson(String json){
-    DynamicJsonDocument doc = deserialize(json);
-    temperature = doc["temperature"];    
-  }
-
-  DynamicJsonDocument deserialize(String json){
+  int deserialize(String json){
+    try{
     DynamicJsonDocument doc(1024);
     deserializeJson(doc, json);
-    return doc;
+    k_p = doc["k_p"];
+    temperature = doc["temperature"];
+    k_i = doc["k_i"];
+    k_d = doc["k_d"];
+    targetTemperature = doc["targetTemperature"];
+    scaleMin = doc["scaleMin"];    
+    scaleMax = doc["scaleMax"];    
+    max_duty_cycle= doc["maxDutyCycles"]; 
+    return 1;
+    }catch(const std::exception& e){
+      Serial.print(e.what());
+      return 0;
+    }
   }
+
   
   bool overridePID = false; 
   bool heatingElementOn = false;
@@ -54,4 +38,7 @@ struct State{
   float k_i = 1;
   float k_d = 1;
   int dutyCycles = 0;
+  int scaleMin = 500;
+  int scaleMax = 500;
+  int max_duty_cycle = 20; //seconds
 } state;

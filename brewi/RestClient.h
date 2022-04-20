@@ -5,33 +5,8 @@
 #include <WiFi.h>
 #include <aREST.h>
 
-int setOverridePID(String overridePID){
-  state.setOverridePIDFromJson(overridePID);
-  return 1;
-}
-
-int setHeatingElementOn(String heatingElementOn){
-  state.setHeatingElementOnFromJson(heatingElementOn);
-  return 1;
-}
-
-int setKP(String json){
-  state.setKPFromJson(json);
-  return 1;
-}
-
-int setTargetTemperature(String json){
-  state.setTargetTemperature(json);
-  return 1;
-}
-
-int setKI(String json){
-  state.setKIFromJson(json);
-  return 1;
-}
-
-int setKD(String json){
-  state.setKDFromJson(json);
+int deserializeConfig(String overridePID){
+  state.deserialize(overridePID);
   return 1;
 }
 
@@ -62,12 +37,7 @@ public:
     rest_.variable("pidI", &state.pidI); 
     rest_.variable("pidP", &state.pidP); 
     rest_.variable("dutyCycles", &state.dutyCycles); 
-    rest_.function("setOveridePID", setOverridePID); 
-    rest_.function("setHeatinElementOn", setHeatingElementOn); 
-    rest_.function("setKI", setKI); 
-    rest_.function("setKP", setKP); 
-    rest_.function("setKP", setKP); 
-    rest_.function("setKP", setTargetTemperature); 
+    rest_.function("state", deserializeConfig); 
 
     while ( status_ != WL_CONNECTED) {
       status_ = WiFi.begin((char *) config.ssid.c_str(), (char *) config.pwd.c_str());
@@ -88,5 +58,4 @@ private:
   aREST rest_;
 
   int status_ = 0;
-  float temperature = -127.0;
 } restClient;
