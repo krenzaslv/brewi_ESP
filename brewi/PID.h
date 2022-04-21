@@ -6,34 +6,42 @@ class PID{
 public:
   PID() = default;
 
-  float PIDGain(float temp, float dt){
-    return config.k_p*error(temp) + config.k_i*SerrorDt(temp, float dt) + config.k_d*derror_dt(temp, float dt);
+  void process(float dt){
+    state.pidGain = PIDGain(dt);
+    state.dutyCycles = scalePIDToDutyCycle(state.pidGain);
   }
 
-  float error(float temp){
-    return targetTmp - temp
+  float PIDGain(float dt){
+    return state.k_p*error() + state.k_i*SerrorDt(dt) + state.k_d*derror_dt(dt);
   }
 
-  float derror_dt(float temp, float dt){
-    float e = error(temp);
-    float derivative  = (e - derivativeBuffer)/dt;
+  float error(){
+    float e = state.targetTemperature - state.temperature; 
+    state.pidP = e;
+    return e;
+  }
+
+  float derror_dt(float dt){
+    float e = error();
+    float derivative  = -(e - derivativeBuffer)/dt;
     derivativeBuffer = e;
+    state.pidD = derivative;
     return derivative; 
   }
 
-  float SerrorDt(float temp, float dt){
-    integralBuffer += dt*error(temp);
+  float SerrorDt(float dt){
+    integralBuffer += dt*error();
+    state.pidI = integralBuffer;
     return integralBuffer;
   }
 
-  int scalePIDToDutyCycle(float temp, float dt){
-    float e = PIDGain(float temp, dt)*(config.scale_max);
-    return e <= 0 ? 0 : e*config.maxDutyCycles;
+  float scalePIDToDutyCycle(float gain){
+    float e = gain/(state.scaleMax);
+    e = e > 1 ? 1 : e;
+    return gain <= 0 ? 0 : e;
   }
 
 private:
-
-  float targetTmp = 22;
-  float derivativeBuffer = targetTmp;
+  float derivativeBuffer = state.targetTemperature;
   float integralBuffer = 0;
-} pid;
+};

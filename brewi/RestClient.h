@@ -35,10 +35,12 @@ public:
   void setup(){
     Serial.println("Init Rest Client: ");
     rest_.variable("temperature", &state.temperature); 
+    rest_.variable("targetTemperature", &state.targetTemperature); 
     rest_.variable("isHeating", &state.isHeating);
     rest_.variable("pidGain", &state.pidGain); 
     rest_.variable("pidD", &state.pidD); 
     rest_.variable("pidI", &state.pidI); 
+    rest_.variable("time", &state.time); 
     rest_.variable("pidP", &state.pidP); 
     rest_.variable("dutyCycles", &state.dutyCycles); 
     rest_.function("state", deserializeConfig); 
