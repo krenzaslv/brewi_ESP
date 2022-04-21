@@ -2,7 +2,7 @@
 
 #include "Config.h"
 #include "State.h"
-#include <WiFi.h>
+#include <ESP8266WiFi.h>
 #include <aREST.h>
 
 int deserializeConfig(String overridePID){
@@ -30,6 +30,10 @@ void printWifiStatus() {
 class RestClient{
 public:
   RestClient(): server_{WiFiServer(80)}{
+  }
+
+  void setup(){
+    Serial.println("Init Rest Client: ");
     rest_.variable("temperature", &state.temperature); 
     rest_.variable("isHeating", &state.isHeating);
     rest_.variable("pidGain", &state.pidGain); 
@@ -38,10 +42,18 @@ public:
     rest_.variable("pidP", &state.pidP); 
     rest_.variable("dutyCycles", &state.dutyCycles); 
     rest_.function("state", deserializeConfig); 
+    Serial.println("Init WIFI... ");
 
+    // check for the presence of the shield:
+    if (WiFi.status() == WL_NO_SHIELD) {
+      Serial.println("WiFi shield not present");
+      // don't continue:
+      while (true);
+    }
     while ( status_ != WL_CONNECTED) {
+      Serial.print("Attempting to connect to SSID: ");
+      Serial.println(config.ssid.c_str());
       status_ = WiFi.begin((char *) config.ssid.c_str(), (char *) config.pwd.c_str());
-
       delay(10000);
     }
     server_.begin();
@@ -57,5 +69,5 @@ private:
   WiFiServer server_;
   aREST rest_;
 
-  int status_ = 0;
-} restClient;
+  int status_ = WL_IDLE_STATUS;
+};

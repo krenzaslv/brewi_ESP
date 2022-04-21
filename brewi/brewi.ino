@@ -7,10 +7,12 @@
 
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
+RestClient restClient;
 
 void setup(void){
   Serial.begin(115200);
   sensors.begin();
+  restClient.setup();
 }
 
 void loop(void){
