@@ -5,8 +5,13 @@
 #include <ESP8266WiFi.h>
 #include <aREST.h>
 
-int deserializeConfig(String overridePID){
+int deserializeConfig(String overridePID) {
   state.deserialize(overridePID);
+  return 1;
+}
+
+int deserializeTargetTemperature(String targetTemperature) {
+  state.deserializeTargetTemperature(targetTemperature);
   return 1;
 }
 
@@ -27,42 +32,40 @@ void printWifiStatus() {
   Serial.println(" dBm");
 }
 
-class RestClient{
+class RestClient {
 public:
-  RestClient(): server_{WiFiServer(80)}{
-  }
+  RestClient() : server_{WiFiServer(80)} {}
 
-  void setup(){
+  void setup() {
     Serial.println("Init Rest Client: ");
-    rest_.variable("temperature", &state.temperature); 
-    rest_.variable("targetTemperature", &state.targetTemperature); 
+    rest_.variable("temperature", &state.temperature);
+    rest_.variable("targetTemperature", &state.targetTemperature);
     rest_.variable("isHeating", &state.isHeating);
-    rest_.variable("pidGain", &state.pidGain); 
-    rest_.variable("pidD", &state.pidD); 
-    rest_.variable("pidI", &state.pidI); 
-    rest_.variable("time", &state.time); 
-    rest_.variable("pidP", &state.pidP); 
-    rest_.variable("dutyCycles", &state.dutyCycles); 
-    rest_.function("state", deserializeConfig); 
+    rest_.variable("pidGain", &state.pidGain);
+    // rest_.variable("pidD", &state.pidD);
+    // rest_.variable("pidI", &state.pidI);
+    // rest_.variable("pidP", &state.pidP);
+    rest_.variable("pidDScaled", &state.pidD_scaled);
+    rest_.variable("pidIScaled", &state.pidI_scaled);
+    rest_.variable("pidPScaled", &state.pidP_scaled);
+    rest_.variable("time", &state.time);
+    rest_.variable("dutyCycles", &state.dutyCycles);
+    //rest_.function("state", deserializeConfig);
+    rest_.function("targetTemp", deserializeTargetTemperature);
     Serial.println("Init WIFI... ");
 
-    // check for the presence of the shield:
-    if (WiFi.status() == WL_NO_SHIELD) {
-      Serial.println("WiFi shield not present");
-      // don't continue:
-      while (true);
-    }
-    while ( status_ != WL_CONNECTED) {
+    while (status_ != WL_CONNECTED) {
       Serial.print("Attempting to connect to SSID: ");
       Serial.println(config.ssid.c_str());
-      status_ = WiFi.begin((char *) config.ssid.c_str(), (char *) config.pwd.c_str());
+      status_ =
+          WiFi.begin((char *)config.ssid.c_str(), (char *)config.pwd.c_str());
       delay(10000);
     }
     server_.begin();
     printWifiStatus();
   }
 
-  void process(){
+  void process() {
     WiFiClient client = server_.available();
     rest_.handle(client);
   }

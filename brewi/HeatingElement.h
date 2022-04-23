@@ -17,8 +17,8 @@ public:
   
   //Returns wheter current cycle is finished
   bool process(){
-    processDutyCycle();
     if(timer_.dt_interval() < state.dutyCycleDuration){
+      processDutyCycle();
       return true;
     }
     else{

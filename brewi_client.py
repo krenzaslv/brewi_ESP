@@ -6,10 +6,10 @@ import schedule
 import pandas as pd
 import seaborn as sns
 
-REMOTE_IP = 'http://10.0.22.80'
+REMOTE_IP = 'http://10.0.22.118'
 UPDATE_INTERVAL = 6
 SLEEP_INTERVAL = 6
-FILENAME = results.csv
+FILENAME = 'results.csv'
 LOAD_DATA = False
 
 fig = plt.figure()
@@ -26,8 +26,11 @@ def saveData():
     data.to_csv("log") 
 
 def request():
-    response = requests.get(REMOTE_IP).json()
-    d = pd.DataFrame([response['variables']])
+    try:
+        response = requests.get(REMOTE_IP).json()
+        d = pd.DataFrame([response['variables']])
+    except:
+        d = pd.DataFrame()
     return d
 
 def requestSchedule():
@@ -44,9 +47,9 @@ def plotSchedule():
     ax1.set_ylabel('Temperature')
     
     ax2.plot(data['time'],data['pidGain'], label="PID Gain", c="tab:blue")
-    ax2.plot(data['time'],data['pidD'], label="PID D", c="tab:red")
-    ax2.plot(data['time'],data['pidI'], label="PID I", c="tab:orange")
-    ax2.plot(data['time'],data['pidP'], label="PID P", c="tab:cyan")
+    ax2.plot(data['time'],data['pidDScaled'], label="PID D", c="tab:red")
+    ax2.plot(data['time'],data['pidIScaled'], label="PID I", c="tab:orange")
+    ax2.plot(data['time'],data['pidPScaled'], label="PID P", c="tab:cyan")
     ax2.set_xlabel('Seconds')
     ax2.set_ylabel('PID')
 

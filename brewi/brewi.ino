@@ -10,6 +10,8 @@ TemperatureSensor temperatureSensor;
 PID pidController;
 Clock timer;
 Clock overallTimer;
+Clock temperatureUpdateTimer;
+
 HeatingElement heatingElement;
 
 void setup(void){
@@ -19,6 +21,7 @@ void setup(void){
   heatingElement.setup();
   timer.interval();
   overallTimer.interval();
+  temperatureUpdateTimer.interval();
 }
 
 void loop(void){
@@ -27,7 +30,14 @@ void loop(void){
   pidController.process(timer.dt_interval());
   while(heatingElement.process()){
     restClient.process();
-    delay(500);
+    
+    if(temperatureUpdateTimer.dt_interval()>10){
+          temperatureSensor.process();
+          temperatureUpdateTimer.interval();
+    }
+    
+    //delay(500);
+    state.time = overallTimer.dt_interval();
   }
   timer.interval();
   state.time = overallTimer.dt_interval();
