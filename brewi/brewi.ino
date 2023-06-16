@@ -14,7 +14,7 @@ Clock temperatureUpdateTimer;
 
 HeatingElement heatingElement;
 
-void setup(void){
+void setup(void) {
   Serial.begin(115200);
   restClient.setup();
   temperatureSensor.setup();
@@ -24,21 +24,18 @@ void setup(void){
   temperatureUpdateTimer.interval();
 }
 
-void loop(void){
-  //TODO would be nicer with a more functional approach that doesn't modify the state
+void loop(void) {
   temperatureSensor.process();
-  pidController.process(timer.dt_interval());
-  while(heatingElement.process()){
-    restClient.process();
-    
-    if(temperatureUpdateTimer.dt_interval()>10){
-          temperatureSensor.process();
-          temperatureUpdateTimer.interval();
-    }
-    
-    //delay(500);
-    state.time = overallTimer.dt_interval();
+  if (state.is_on) {
+    while (heatingElement.process()) {
+      restClient.process();
+      temperatureSensor.process();
+      state.time = overallTimer.dt_interval() / 60;
+    } 
+    pidController.process(timer.dt_interval());
+    timer.interval();
+    state.time = overallTimer.dt_interval() / 60;
   }
-  timer.interval();
-  state.time = overallTimer.dt_interval();
+  
+  restClient.process();
 }

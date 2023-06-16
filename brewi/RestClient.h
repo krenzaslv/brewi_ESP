@@ -4,14 +4,15 @@
 #include "State.h"
 #include <ESP8266WiFi.h>
 #include <aREST.h>
-
-int deserializeConfig(String overridePID) {
-  state.deserialize(overridePID);
-  return 1;
-}
+#include <ESP8266HTTPClient.h>
+#include "Clock.h"
 
 int deserializeTargetTemperature(String targetTemperature) {
   state.deserializeTargetTemperature(targetTemperature);
+  return 1;
+}
+int deserializeIsOn(String isOn) {
+  state.deserializeIsOn(isOn);
   return 1;
 }
 
@@ -38,41 +39,49 @@ public:
 
   void setup() {
     Serial.println("Init Rest Client: ");
-    rest_.variable("temperature", &state.temperature);
-    rest_.variable("targetTemperature", &state.targetTemperature);
-    rest_.variable("isHeating", &state.isHeating);
-    rest_.variable("pidGain", &state.pidGain);
-    // rest_.variable("pidD", &state.pidD);
-    // rest_.variable("pidI", &state.pidI);
-    // rest_.variable("pidP", &state.pidP);
-    rest_.variable("pidDScaled", &state.pidD_scaled);
-    rest_.variable("pidIScaled", &state.pidI_scaled);
-    rest_.variable("pidPScaled", &state.pidP_scaled);
-    rest_.variable("time", &state.time);
-    rest_.variable("dutyCycles", &state.dutyCycles);
-    //rest_.function("state", deserializeConfig);
-    rest_.function("targetTemp", deserializeTargetTemperature);
-    Serial.println("Init WIFI... ");
 
-    while (status_ != WL_CONNECTED) {
-      Serial.print("Attempting to connect to SSID: ");
-      Serial.println(config.ssid.c_str());
-      status_ =
-          WiFi.begin((char *)config.ssid.c_str(), (char *)config.pwd.c_str());
-      delay(10000);
+    rest_.function("set_target_emp", deserializeTargetTemperature);
+    rest_.function("setIsOn", deserializeIsOn);
+    Serial.println("Init WIFI... ");
+    
+    Serial.print("Attempting to connect to SSID: ");
+    Serial.println(config.ssid.c_str());
+    WiFi.begin((char *)config.ssid.c_str(), (char *)config.pwd.c_str());
+      
+    while (WiFi.status() != WL_CONNECTED) {
+      Serial.print(".");
+      delay(500);
     }
+    Serial.print("Connected.");
     server_.begin();
     printWifiStatus();
+
+    timer_.interval();
   }
 
   void process() {
-    WiFiClient client = server_.available();
-    rest_.handle(client);
+    
+    if(timer_.hasPassed(1000)){
+      timer_.interval();
+    
+      WiFiClient client = server_.available();
+      rest_.handle(client);
+      
+      HTTPClient http;
+      http.begin(client, config.remoteIP, 8080, "/log");
+      
+      int responseCode = http.POST(state.to_json().c_str());
+      
+      if (responseCode != 200){
+        Serial. print(state.to_json().c_str());
+        Serial.print(responseCode);
+        Serial.println();
+      }
+    }
   }
 
 private:
   WiFiServer server_;
   aREST rest_;
-
-  int status_ = WL_IDLE_STATUS;
+  Clock timer_;
 };

@@ -17,7 +17,7 @@ public:
   
   //Returns wheter current cycle is finished
   bool process(){
-    if(timer_.dt_interval() < state.dutyCycleDuration){
+    if(timer_.dt_interval() < state.duty_cycle_duration){
       processDutyCycle();
       return true;
     }
@@ -31,18 +31,17 @@ private:
   Clock timer_;
 
   void processDutyCycle(){
-    if(state.overridePID && (state.heatingElementOn != state.isHeating)){
-      activateHeatingElement(state.heatingElementOn);
-      state.isHeating - state.heatingElementOn;
-      timer_.interval();
-    }else if (!state.overridePID){
-      if(timer_.dt_interval() < state.dutyCycleDuration*state.dutyCycles && !state.isHeating){
+    if(state.override_pid){
+      //TODO
+    }
+    else if (!state.override_pid){
+      if(timer_.dt_interval() < state.duty_cycle_duration*state.duty_cycle && !state.is_heating){
         activateHeatingElement(true);
-        state.isHeating = true;
+        state.is_heating = true;
       }
-      else if(timer_.dt_interval() > state.dutyCycleDuration*state.dutyCycles && state.isHeating){
+      else if(timer_.dt_interval() > state.duty_cycle_duration*state.duty_cycle && state.is_heating){
         activateHeatingElement(false);
-        state.isHeating = false;
+        state.is_heating = false;
       }
     }
   }

@@ -3,6 +3,7 @@
 #include "State.h"
 #include <DallasTemperature.h>
 #include <OneWire.h>
+#include "Clock.h"
 
 #define TEMPERATURE_BUS 4
 
@@ -35,29 +36,36 @@ private:
 class TemperatureSensor {
 
 public:
-  TemperatureSensor(int nMesurements = 5)
+  TemperatureSensor(int nMesurements = 1)
       : nMesurements_{nMesurements}, oneWire_{TEMPERATURE_BUS},
         sensors_(&oneWire_) {}
 
   void setup() {
     // sensors_.setResolution(10);
     sensors_.begin();
+    clock_.interval();
   }
 
   void process() {
-    float avgTemperature = 0;
-    // Average sensor measurements
-    for (size_t i = 0; i < nMesurements_; ++i) {
-      sensors_.requestTemperatures();
-      avgTemperature += sensors_.getTempCByIndex(0);
+    if(clock_.hasPassed(100)){
+      clock.interval();
+
+      float avgTemperature = 0;
+      // Average sensor measurements
+      for (size_t i = 0; i < nMesurements_; ++i) {
+        sensors_.requestTemperatures();
+        avgTemperature += sensors_.getTempCByIndex(0);
+        /* delay(5); */
+        }
+      buffer_.add(avgTemperature/nMesurements_);
+      state.temperature = buffer_.getAvg();
     }
-    buffer_.add(avgTemperature/nMesurements_);
-    state.temperature = buffer_.getAvg();
   }
 
 private:
   int nMesurements_;
   OneWire oneWire_;
   DallasTemperature sensors_;
-  CircularTemperatureBuffer<5> buffer_;
+  CircularTemperatureBuffer<10> buffer_;
+  Clock clock_;
 };
