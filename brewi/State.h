@@ -4,22 +4,28 @@
 #include <string>
 
 struct State {
-  int deserialize_target_temperature(String temp) {
-    Serial.print("Setting targetTemperature to:");
-    Serial.print(temp.toFloat());
-    target_temperature = temp.toFloat();
-    return 1;
-  }
 
-  int deserialize_activated(String activated) {
-    is_activated = activated == "True" ? true : false;
-    return 1;
-  }
+  bool is_heating = false;
+  bool is_activated = false;
+  bool override_pid = false;
 
-  int deserialize_override_pid(String override_pid_) {
-    override_pid = override_pid_ == "True" ? true : false;
-    return 1;
-  }
+  float temperature = 22.0;
+  float target_temperature = 30.0;
+  float pid_gain = 0;
+  float pd_gain = 0;
+  float pi_gain = 0;
+  float pp_gain = 0;
+  float pp_gain_scaled = 0;
+  float pd_gain_scaled = 0;
+  float pi_gain_scaled = 0;
+  
+  float k_p = 0.7;
+  float t_i = 50;
+  float t_d = 20;
+
+  float duty_cycle = 0;
+  int pidWindowLenght = 10*1e10; 
+
 
   std::string to_json() const{
     DynamicJsonDocument json(1024);
@@ -48,26 +54,16 @@ struct State {
     return std::string(output);
   }
 
-  bool is_heating = false;
-  bool is_activated = false;
-  bool override_pid = false;
 
-  float temperature = 22.0;
-  float target_temperature = 30.0;
-  float pid_gain = 0;
-  float pd_gain = 0;
-  float pi_gain = 0;
-  float pp_gain = 0;
-  float pp_gain_scaled = 0;
-  float pd_gain_scaled = 0;
-  float pi_gain_scaled = 0;
+  std::string from_json(String json) {
+    DynamicJsonDocument doc(1024);
+    deserializeJson(doc, json);
 
-  
-  float k_p = 0.7;
-  float t_i = 50;
-  float t_d = 20;
-  float duty_cycle = 0;
-  int scale_max = 10;
-  int duty_cycle_duration = 10; // seconds
-  float time = 0;             // minutes
+    k_p  = doc["k_p"];
+    t_i = doc["t_i"];
+    t_d = doc["t_d"];
+    override_pid = doc["override_pid"];
+    target_temperature = doc["target_temperature"];
+    is_activated = doc["is_activated"];
+  }
 } state;

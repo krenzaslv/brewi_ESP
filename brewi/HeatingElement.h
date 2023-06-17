@@ -1,61 +1,46 @@
 #pragma once
 
 #include "State.h"
-#include "Clock.h"
+#include "Chrono.h"
 
 #define HEATING_BUS 12
 
 class HeatingElement{
-public:
-  HeatingElement(){
-    timer_.interval();
-  }
 
-  void setup(){
-    pinMode(HEATING_BUS, OUTPUT);   
-  }
-  
-  //Returns wheter current cycle is finished
-  bool process(){
-    if(timer_.dt_interval() < state.duty_cycle_duration){
+  public:
+    HeatingElement() = default;
+
+    void setup(){
+      pinMode(HEATING_BUS, OUTPUT); 
+    }
+
+    //Returns wheter current cycle is finished
+    void process(){
+      if(timer_.hasPassed(state.pidWindowLenght)) timer_.restart();
+
       processDutyCycle();
-      return true;
     }
-    else{
-      timer_.interval();
-      return false;
-    }
-  }
 
-private:
-  Clock timer_;
+  private:
 
-  void processDutyCycle(){
-    if(state.override_pid){
-      //TODO
-    }
-    else if (!state.override_pid){
-      if(timer_.dt_interval() < state.duty_cycle_duration*state.duty_cycle && !state.is_heating){
-        activateHeatingElement(true);
-        state.is_heating = true;
-      }
-      else if(timer_.dt_interval() > state.duty_cycle_duration*state.duty_cycle && state.is_heating){
-        activateHeatingElement(false);
-        state.is_heating = false;
-      }
-    }
-  }
+    Chrono timer_;
 
-  void activateHeatingElement(bool on){
-    Serial.print("Set Heating Element to:  ");
-    Serial.println(on);
-    
-    if(on){
-      digitalWrite(HEATING_BUS, HIGH);
+    void processDutyCycle(){
+      bool on = false;
+
+      if(state.override_pid) on = state.is_activated;
+      else if(!timer_.hasPassed(state.pidWindowLenght*state.duty_cycle) && !state.is_heating) on = true;
+
+      activateHeatingElement(on);
+      state.is_heating = on;
     }
-    else{
-      digitalWrite(HEATING_BUS, LOW);
+
+    void activateHeatingElement(bool on){
+      Serial.print("Set Heating Element to:  ");
+      Serial.println(on);
+
+      if(on) digitalWrite(HEATING_BUS, HIGH);
+      else digitalWrite(HEATING_BUS, LOW);
+
     }
-    
-  }
 };

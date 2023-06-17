@@ -1,19 +1,27 @@
 #pragma once
 
 #include "State.h"
+#include <algorithm>
 
 class PID {
 public:
   PID() = default;
 
+  void setup(){
+
+  }
+
+  void reset(){
+
+  }
+
+  //dt in seconds
   void process(float dt) {
-    state.pid_gain = pidGain(dt);
-    state.duty_cycle = scalePIDToDutyCycle(state.pid_gain);
+    state.pid_gain = scaletoWindowLenght(pidGain(dt));
   }
 
   float pidGain(float dt) {
-    return state.k_p * (error() + 1/state.t_i * SerrorDt(dt) +
-           state.t_d * derror_dt(dt));
+    return state.k_p * error() + scaletoWindowLenght(SerrorDt(dt)) + state.k_p*state.t_d * derror_dt(dt);
   }
 
   float error() {
@@ -24,30 +32,26 @@ public:
   }
 
   float derror_dt(float dt) {
-    float e = error();
-    float derivative = (e - derivativeBuffer) / dt;
-    derivativeBuffer = e;
+    float derivative = (state.temperature - temperatureBuffer) / dt;
+    temperatureBuffer = state.temperature;
     state.pd_gain = derivative;
     state.pd_gain_scaled = state.k_p*state.t_d * derivative;
     return derivative;
   }
 
   float SerrorDt(float dt) {
-    integralBuffer += dt * error() ;
-    integralBuffer = std::abs(error()) > 2 ? 0 : integralBuffer;
+    integralBuffer += state.k_p/state.t_i* dt * error() ;
     state.pi_gain = integralBuffer;
-    state.pi_gain_scaled = state.k_p/state.t_i * integralBuffer;
+    state.pi_gain_scaled = integralBuffer;
     return integralBuffer;
-   
   }
 
-  float scalePIDToDutyCycle(float gain) {
-    float e = gain / (state.scale_max);
-    e = e > 1 ? 1 : e;
-    return gain <= 0 ? 0 : e;
-  }
 
 private:
-  float derivativeBuffer = state.target_temperature;
+  float temperatureBuffer = 0;
   float integralBuffer = 0;
+
+  float scaletoWindowLenght(float gain) {
+    return std::min(std::max(gain, 0.0f), (float)(state.pidWindowLenght/1e3));
+  }
 };
