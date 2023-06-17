@@ -18,6 +18,7 @@ public:
 
   float error() {
     float e = state.target_temperature - state.temperature;
+    state.pp_gain = e;
     state.pp_gain_scaled = state.k_p * e;
     return e;
   }
@@ -26,13 +27,15 @@ public:
     float e = error();
     float derivative = (e - derivativeBuffer) / dt;
     derivativeBuffer = e;
+    state.pd_gain = derivative;
     state.pd_gain_scaled = state.k_p*state.t_d * derivative;
     return derivative;
   }
 
   float SerrorDt(float dt) {
     integralBuffer += dt * error() ;
-    integralBuffer = std::abs(error()) > 1.5 ? 0 : integralBuffer;
+    integralBuffer = std::abs(error()) > 2 ? 0 : integralBuffer;
+    state.pi_gain = integralBuffer;
     state.pi_gain_scaled = state.k_p/state.t_i * integralBuffer;
     return integralBuffer;
    

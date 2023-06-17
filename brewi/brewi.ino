@@ -4,6 +4,7 @@
 #include "HeatingElement.h"
 #include "Clock.h"
 #include "PID.h"
+#include <TimerOne.h>
 
 RestClient restClient;
 TemperatureSensor temperatureSensor;
@@ -26,7 +27,7 @@ void setup(void) {
 
 void loop(void) {
   temperatureSensor.process();
-  if (state.is_on) {
+  if (state.is_activated) {
     while (heatingElement.process()) {
       restClient.process();
       temperatureSensor.process();

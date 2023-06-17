@@ -2,7 +2,6 @@
 
 #include <Chrono.h>
 
-//TODO not needed anynore thanks to Chrono.h
 class Clock{
 public:
 

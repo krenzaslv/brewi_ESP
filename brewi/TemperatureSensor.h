@@ -48,7 +48,7 @@ public:
 
   void process() {
     if(clock_.hasPassed(100)){
-      clock.interval();
+      clock_.interval();
 
       float avgTemperature = 0;
       // Average sensor measurements
@@ -56,8 +56,11 @@ public:
         sensors_.requestTemperatures();
         avgTemperature += sensors_.getTempCByIndex(0);
         /* delay(5); */
-        }
-      buffer_.add(avgTemperature/nMesurements_);
+      }
+      avgTemperature/=nMesurements_;
+      float currentTmp = buffer_.getAvg();
+      if(avgTemperature > 1.2*currentTmp || avgTemperature < 0.8*currentTmp) return;
+      buffer_.add(avgTemperature);
       state.temperature = buffer_.getAvg();
     }
   }

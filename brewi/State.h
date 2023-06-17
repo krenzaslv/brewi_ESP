@@ -4,21 +4,27 @@
 #include <string>
 
 struct State {
-  int deserializeTargetTemperature(String temp) {
+  int deserialize_target_temperature(String temp) {
     Serial.print("Setting targetTemperature to:");
     Serial.print(temp.toFloat());
     target_temperature = temp.toFloat();
     return 1;
   }
-  int deserializeIsOn(String on) {
-    is_on = on.toInt();
+
+  int deserialize_activated(String activated) {
+    is_activated = activated == "True" ? true : false;
+    return 1;
+  }
+
+  int deserialize_override_pid(String override_pid_) {
+    override_pid = override_pid_ == "True" ? true : false;
     return 1;
   }
 
   std::string to_json() const{
     DynamicJsonDocument json(1024);
     json["is_heating"] = is_heating;
-    json["is_on"] = is_on;
+    json["is_activated"] = is_activated;
     json["override_pid"] = override_pid;
 
     json["temperature"] = temperature;
@@ -43,7 +49,7 @@ struct State {
   }
 
   bool is_heating = false;
-  bool is_on = false;
+  bool is_activated = false;
   bool override_pid = false;
 
   float temperature = 22.0;
@@ -57,11 +63,11 @@ struct State {
   float pi_gain_scaled = 0;
 
   
-  float k_p = 25;
-  float t_i = 3;
-  float t_d = 2;
+  float k_p = 0.7;
+  float t_i = 50;
+  float t_d = 20;
   float duty_cycle = 0;
-  int scale_max = 100;
-  int duty_cycle_duration = 60; // seconds
+  int scale_max = 10;
+  int duty_cycle_duration = 10; // seconds
   float time = 0;             // minutes
 } state;

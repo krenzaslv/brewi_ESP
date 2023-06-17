@@ -7,15 +7,19 @@
 #include <ESP8266HTTPClient.h>
 #include "Clock.h"
 
-int deserializeTargetTemperature(String targetTemperature) {
-  state.deserializeTargetTemperature(targetTemperature);
+int deserialize_target_temperature(String targetTemperature) {
+  state.deserialize_target_temperature(targetTemperature);
   return 1;
 }
-int deserializeIsOn(String isOn) {
-  state.deserializeIsOn(isOn);
+int deserialize_activated(String activated) {
+  state.deserialize_activated(activated);
   return 1;
 }
 
+int deserialize_override_pid(String override_pid) {
+  state.deserialize_override_pid(override_pid);
+  return 1;
+}
 void printWifiStatus() {
   // print the SSID of the network you're attached to:
   Serial.print("SSID: ");
@@ -40,8 +44,10 @@ public:
   void setup() {
     Serial.println("Init Rest Client: ");
 
-    rest_.function("set_target_emp", deserializeTargetTemperature);
-    rest_.function("setIsOn", deserializeIsOn);
+    rest_.function("set_target_temp", deserialize_target_temperature);
+    rest_.function("set_activated", deserialize_activated);
+    rest_.function("set_override_pid", deserialize_override_pid);
+
     Serial.println("Init WIFI... ");
     
     Serial.print("Attempting to connect to SSID: ");
@@ -60,20 +66,18 @@ public:
   }
 
   void process() {
-    
+    WiFiClient client = server_.available();
+    rest_.handle(client);
+      
     if(timer_.hasPassed(1000)){
       timer_.interval();
     
-      WiFiClient client = server_.available();
-      rest_.handle(client);
-      
       HTTPClient http;
       http.begin(client, config.remoteIP, 8080, "/log");
       
       int responseCode = http.POST(state.to_json().c_str());
       
       if (responseCode != 200){
-        Serial. print(state.to_json().c_str());
         Serial.print(responseCode);
         Serial.println();
       }
