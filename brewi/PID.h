@@ -42,6 +42,7 @@ public:
 
   float SerrorDt(float dt) {
     integralBuffer += state.k_p/state.t_i* dt * error() ;
+    integralBuffer = scaletoWindowLenght(integralBuffer);
     state.pi_gain = integralBuffer;
     state.pi_gain_scaled = integralBuffer;
     return integralBuffer;

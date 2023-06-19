@@ -45,6 +45,7 @@ void loop(void) {
         //Reset PID if newly activated
         if (state.is_activated != !currently_activated || state.override_pid || setTemp != state.target_temperature){
             currently_activated = state.is_activated;
+            setTemp = state.target_temperature;
             pidController.reset();
         }
 
