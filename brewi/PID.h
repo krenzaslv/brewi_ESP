@@ -13,7 +13,7 @@ public:
 
   void reset(){
     integralBuffer = 0;
-    temperatureBuffer = state.temperature;
+    temperatureBuffer = state.temperatureAvg;
   }
 
   //dt in seconds
@@ -26,15 +26,15 @@ public:
   }
 
   float error() {
-    float e = state.target_temperature - state.temperature;
+    float e = state.target_temperature - state.temperatureAvg;
     state.pp_gain = e;
     state.pp_gain_scaled = state.k_p * e;
     return e;
   }
 
   float derror_dt(float dt) {
-    float derivative = -(state.temperature - temperatureBuffer) / dt;
-    temperatureBuffer = state.temperature;
+    float derivative = -(state.temperatureAvg- temperatureBuffer) / dt;
+    temperatureBuffer = state.temperatureAvg;
     state.pd_gain = derivative;
     state.pd_gain_scaled = state.k_p*state.t_d * derivative;
     return derivative;

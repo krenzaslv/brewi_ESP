@@ -51,7 +51,7 @@ class ExponentialFilter{
     float y_n_ = 0;
 
     //Exp filter params
-    float w = 0;
+    float w = 0.5;
 };
 
 class KalmanFilter{
@@ -63,13 +63,6 @@ class KalmanFilter{
     }
 
     float next(float temp, float dt){
-      /* x_n_= x_n_ + x_n_dot_*dt; */  
-
-      /* p_x_ = p_x_ + dt*p_v_; //Position uncertainty estimate */
-      
-      /* x_n_ = w_*temp + (1-w_)*x_n_; // State update */
-      /* p_n_ = w_*temp + (1-w_)*x_n_; // Prior update */
-      
       //State update
       x_n_ = x_n_ + K*(temp - x_n_); //State update
       x_n_dot_ = (x_n_ - x_nm1_)*dt; //FD estimate of state velocity 
@@ -89,15 +82,11 @@ class KalmanFilter{
     float x_n_ = 0;
     float x_nm1_ = 0;
 
-    /* float p_v_ = 1; //Velocity uncertainty estimate */
-    /* float p_x_ = 1; //Velocity uncertainty estimate */
-    
-
-    float K = 1;
-    float r = 1; // Measurement noise
-    float p = 1; // Variance estimate
-    float p_v = 1; // Velocity variance estimate 
-    float q = 1; // Process noise 
+    float K = 0.5;
+    float r = 0.5; // Measurement noise
+    float p = 0.5; // Variance estimate
+    float p_v = 0.5; // Velocity variance estimate 
+    float q = 0.5; // Process noise 
 };
 
 
@@ -110,11 +99,11 @@ class TemperatureSensor {
 
     void setup() {
       sensors_.begin();
+     // sensors_.getAddress(deviceAddress_, 0);
+      //sensors_.setResolution(deviceAddress_, 12);
       sensors_.setResolution(12);
-
       sensors_.requestTemperatures();
-      float temp = sensors_.getTempCByIndex(0);
-
+      float temp =  sensors_.getTempCByIndex(0);
       expFilter_.setup(temp);
       kalmanFilter_.setup(temp);
 
@@ -125,14 +114,15 @@ class TemperatureSensor {
       float avgTemperature = 0;
       // Average sensor measurements
       for (size_t i = 0; i < M; ++i) {
-        sensors_.requestTemperatures();
-        avgTemperature += sensors_.getTempCByIndex(0);
+          sensors_.requestTemperatures();
+      //    avgTemperature += sensors_.getTempC(deviceAddress_);
+          avgTemperature +=  sensors_.getTempCByIndex(0);
         if(i == 0) state.temperature = avgTemperature;
         if (M>1) delay(10);
       }
       avgTemperature/=(float) M;
       float currentTmp = movingAvgFilter_.getAvg();
-      if(avgTemperature > 1.2*currentTmp || avgTemperature < 0.8*currentTmp) return;
+      if(avgTemperature > 1.5*currentTmp || avgTemperature < 0.5*currentTmp) return;
 
       state.temperatureAvg = movingAvgFilter_.add(avgTemperature);
       state.temperatureExp = expFilter_.next(avgTemperature);
@@ -145,6 +135,7 @@ class TemperatureSensor {
     Chrono clock_;
     OneWire oneWire_;
     DallasTemperature sensors_;
+    DeviceAddress deviceAddress_;
 
     MovingAverageFilter<N> movingAvgFilter_;
     ExponentialFilter expFilter_;

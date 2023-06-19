@@ -6,13 +6,13 @@
 #include "PID.h"
 
 const int controlInterval = 100; // ms
-const int measurementInterval = 5*1000; // ms 
-const int messageInterval  = 10*1000; // ms 
+const int measurementInterval = 1*1000; // ms 
+const int messageInterval  = 5*1000; // ms 
 const int pidWindowLenght = 10*1000; // ms
 
-TemperatureSensor<2,1> temperatureSensor; //Running avg over 6 observations 1 at a time 
+TemperatureSensor<5,1> temperatureSensor; //Running avg over 6 observations 1 at a time 
 HeatingElement heatingElement;
-RestClient restClient(messageInterval);
+RestClient restClient;
 PID pidController;
 
 Chrono measurementClock;
@@ -34,8 +34,11 @@ void setup(void) {
 
 void loop(void) {
     
-    heatingElement.process(); //Execute controller as fast as possible
-
+    //if(controlClock.elapsed() > controlInterval){
+    //    controlClock.restart();
+        heatingElement.process(); //Execute controller as fast as possible
+    //}    
+  
     if (measurementClock.elapsed() > measurementInterval){
         float dt = measurementClock.elapsed();
         measurementClock.restart();
@@ -50,7 +53,7 @@ void loop(void) {
         pidController.process(dt/1000.0);
     }
 
-    if(controlClock.elapsed() > controlInterval){
+    if(messagingClock.elapsed() > messageInterval){
         messagingClock.restart();
         restClient.process();
     }
