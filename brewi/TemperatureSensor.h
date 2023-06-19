@@ -4,19 +4,20 @@
 #include "State.h"
 #include <DallasTemperature.h>
 #include <OneWire.h>
-#include "Chrono.h"
 
 #define TEMPERATURE_BUS 4
 
 template<int N>
-class CircularTemperatureBuffer{
+class MovingAverageFilter{
   public:
-    void add(float temperature){
+    float add(float temperature){
       temperatures[currentI%N] = temperature;
       ++currentI;
       ++bufferSize;
       if(currentI > 1000) currentI = currentI % N; //Prevent buffer overflow
       if(bufferSize > 1000) bufferSize = N + 1; //Prevent buffer overflow
+      
+      return getAvg();
     }
 
     float getAvg(){
@@ -34,37 +35,118 @@ class CircularTemperatureBuffer{
     float temperatures[N];
 };
 
+class ExponentialFilter{
+  public:
+
+    void setup(float temp){
+      y_n_ = temp;
+    }
+
+    float next(float temp){
+      y_n_ = w*temp+ (1-w)*y_n_;
+      return y_n_;
+  }
+
+  private:
+    float y_n_ = 0;
+
+    //Exp filter params
+    float w = 0;
+};
+
+class KalmanFilter{
+  public:
+
+    void setup(float temp){
+      x_n_ = temp;
+      x_nm1_ = temp;
+    }
+
+    float next(float temp, float dt){
+      /* x_n_= x_n_ + x_n_dot_*dt; */  
+
+      /* p_x_ = p_x_ + dt*p_v_; //Position uncertainty estimate */
+      
+      /* x_n_ = w_*temp + (1-w_)*x_n_; // State update */
+      /* p_n_ = w_*temp + (1-w_)*x_n_; // Prior update */
+      
+      //State update
+      x_n_ = x_n_ + K*(temp - x_n_); //State update
+      x_n_dot_ = (x_n_ - x_nm1_)*dt; //FD estimate of state velocity 
+      x_nm1_ = x_n_;
+      p = (1-K)*p; // Covariance update
+      K = p/(p+r); // Kalman gain
+
+      // State predict
+      x_n_ = x_n_ + dt*x_n_dot_;
+      p = p + dt*dt*p_v;
+      p_v = p_v + q;
+      return x_n_;
+    }
+
+  private:
+    float x_n_dot_ = 0;
+    float x_n_ = 0;
+    float x_nm1_ = 0;
+
+    /* float p_v_ = 1; //Velocity uncertainty estimate */
+    /* float p_x_ = 1; //Velocity uncertainty estimate */
+    
+
+    float K = 1;
+    float r = 1; // Measurement noise
+    float p = 1; // Variance estimate
+    float p_v = 1; // Velocity variance estimate 
+    float q = 1; // Process noise 
+};
+
+
 
 template<int N, int M> ///Running average over last N measurements with M measurements per iteration
 class TemperatureSensor {
 
   public:
-    TemperatureSensor() : oneWire_{HEATING_BUS}, sensors_(&oneWire_) {}
+    TemperatureSensor() : oneWire_{TEMPERATURE_BUS}, sensors_(&oneWire_) {}
 
     void setup() {
-      // sensors_.setResolution(10);
       sensors_.begin();
+      sensors_.setResolution(12);
+
+      sensors_.requestTemperatures();
+      float temp = sensors_.getTempCByIndex(0);
+
+      expFilter_.setup(temp);
+      kalmanFilter_.setup(temp);
+
+      clock_.restart();
     }
 
     void process() {
-
       float avgTemperature = 0;
       // Average sensor measurements
       for (size_t i = 0; i < M; ++i) {
         sensors_.requestTemperatures();
         avgTemperature += sensors_.getTempCByIndex(0);
-        delay(5);
+        if(i == 0) state.temperature = avgTemperature;
+        if (M>1) delay(10);
       }
-      avgTemperature/=nMesurements_;
-      float currentTmp = buffer_.getAvg();
+      avgTemperature/=(float) M;
+      float currentTmp = movingAvgFilter_.getAvg();
       if(avgTemperature > 1.2*currentTmp || avgTemperature < 0.8*currentTmp) return;
-      buffer_.add(avgTemperature);
-      state.temperature = buffer_.getAvg();
+
+      state.temperatureAvg = movingAvgFilter_.add(avgTemperature);
+      state.temperatureExp = expFilter_.next(avgTemperature);
+      state.temperatureKalman = kalmanFilter_.next(avgTemperature,((float) clock_.elapsed())/1000);
+      clock_.restart();
     }
 
   private:
-    int nMesurements_;
+
+    Chrono clock_;
     OneWire oneWire_;
     DallasTemperature sensors_;
-    CircularTemperatureBuffer<N> buffer_;
+
+    MovingAverageFilter<N> movingAvgFilter_;
+    ExponentialFilter expFilter_;
+    KalmanFilter kalmanFilter_;
 };

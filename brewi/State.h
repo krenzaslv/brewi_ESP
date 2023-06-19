@@ -10,6 +10,10 @@ struct State {
   bool override_pid = false;
 
   float temperature = 22.0;
+  float temperatureAvg = 22.0;
+  float temperatureExp= 22.0;
+  float temperatureKalman = 22.0;
+
   float target_temperature = 30.0;
   float pid_gain = 0;
   float pd_gain = 0;
@@ -24,7 +28,7 @@ struct State {
   float t_d = 20;
 
   float duty_cycle = 0;
-  int pidWindowLenght = 10*1e10; 
+  int pidWindowLenght = 10*1000; 
 
 
   std::string to_json() const{
@@ -34,7 +38,11 @@ struct State {
     json["override_pid"] = override_pid;
 
     json["temperature"] = temperature;
+    json["temperatureAvg"] = temperatureAvg;
+    json["temperatureExp"] = temperatureExp;
+    json["temperatureKalman"] = temperatureKalman;
     json["target_temperature"] = target_temperature;
+
     json["pid_gain"] = pid_gain;
     json["pd_gain"] = pd_gain;
     json["pi_gain"] = pi_gain;
@@ -55,10 +63,9 @@ struct State {
   }
 
 
-  std::string from_json(String json) {
+  void from_json(String json) {
     DynamicJsonDocument doc(1024);
     deserializeJson(doc, json);
-
     k_p  = doc["k_p"];
     t_i = doc["t_i"];
     t_d = doc["t_d"];

@@ -16,7 +16,13 @@ class HeatingElement{
 
     //Returns wheter current cycle is finished
     void process(){
-      if(timer_.hasPassed(state.pidWindowLenght)) timer_.restart();
+      if(timer_.elapsed() > state.pidWindowLenght) {
+        timer_.restart();
+        Serial.print("10 seconds passed with nIterations: ");
+        Serial.println(counter);
+        counter = 0;
+      }
+      ++counter;
 
       processDutyCycle();
     }
@@ -24,23 +30,27 @@ class HeatingElement{
   private:
 
     Chrono timer_;
+    int counter = 0;
 
     void processDutyCycle(){
       bool on = false;
 
-      if(state.override_pid) on = state.is_activated;
-      else if(!timer_.hasPassed(state.pidWindowLenght*state.duty_cycle) && !state.is_heating) on = true;
+      if(state.override_pid) {
+        on = state.is_activated;
+      } else if(timer_.elapsed() < int(state.pid_gain*1e3) && state.is_activated) {
+        on = true;
+      }
 
       activateHeatingElement(on);
       state.is_heating = on;
     }
 
     void activateHeatingElement(bool on){
-      Serial.print("Set Heating Element to:  ");
-      Serial.println(on);
-
-      if(on) digitalWrite(HEATING_BUS, HIGH);
-      else digitalWrite(HEATING_BUS, LOW);
+      if(on) {
+        digitalWrite(HEATING_BUS, HIGH);
+      } else {
+        digitalWrite(HEATING_BUS, LOW);
+      }
 
     }
 };

@@ -12,7 +12,8 @@ public:
   }
 
   void reset(){
-
+    integralBuffer = 0;
+    temperatureBuffer = state.temperature;
   }
 
   //dt in seconds
@@ -32,7 +33,7 @@ public:
   }
 
   float derror_dt(float dt) {
-    float derivative = (state.temperature - temperatureBuffer) / dt;
+    float derivative = -(state.temperature - temperatureBuffer) / dt;
     temperatureBuffer = state.temperature;
     state.pd_gain = derivative;
     state.pd_gain_scaled = state.k_p*state.t_d * derivative;
@@ -52,6 +53,6 @@ private:
   float integralBuffer = 0;
 
   float scaletoWindowLenght(float gain) {
-    return std::min(std::max(gain, 0.0f), (float)(state.pidWindowLenght/1e3));
+    return std::min(std::max(gain, 0.0f), (float)(state.pidWindowLenght/(float)1e3));
   }
 };

@@ -4,35 +4,27 @@
 #include "State.h"
 #include <ESP8266WiFi.h>
 #include <aREST.h>
-#include <ESP8266HTTPClient.h>
-#include "Chrono.h"
+#include <ArduinoHttpClient.h>
+#include <exception>
 
 class RestClient {
   public:
-    RestClient(int messageInterval) : messageInterval_{messageInterval}, server_{WiFiServer(80)} {}
+    RestClient() : server_{WiFiServer(80)}, client_ {server_.available()}, http_{client_, config.remoteIP, 8080} {}
 
     void process() {
-      WiFiClient client = server_.available();
-      
-      if(timer_.hasPassed(messageInterval_)){
-        timer_.restart();
-
-        HTTPClient http;
-
-        //POST state to server
-        http.begin(client, config.remoteIP, 8080, "/log");
-        int responseCode = http.POST(state.to_json().c_str());
-        if (responseCode != 200){
-          Serial.print(responseCode);
-          Serial.println();
-        }else{
-          try{
-            state.from_json(client.responseBody());
-          }
-        }
-
+      //POST state to server
+      http_.post("/log", "application/json", state.to_json().c_str());
+      int responseCode = http_.responseStatusCode();
+      if (responseCode != 200){
+        Serial.print("Response code: ");
+        Serial.print(responseCode);
       }
-    }
+
+      //Process control command
+      String responseBody = http_.responseBody();
+      if(responseBody != "{}") state.from_json(responseBody);
+      }
+    
 
     void setup() {
       Serial.println("Init WIFI... ");
@@ -52,10 +44,10 @@ class RestClient {
 
 
   private:
-    int messageInterval_;
+    WiFiClient client_;
+    HttpClient http_;
 
     WiFiServer server_;
-    Chrono timer_;
 
     void printWifiStatus() {
       Serial.print("SSID: ");

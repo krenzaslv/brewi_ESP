@@ -5,18 +5,21 @@
 #include "Chrono.h"
 #include "PID.h"
 
-const float controlInterval = 100; // ms
-const float measurementInterval = 1*1e3; // ms 
-const float messageInterval  = 1*1e3; // ms 
-const float pidWindowLenght = 10*1e3; // ms
+const int controlInterval = 100; // ms
+const int measurementInterval = 5*1000; // ms 
+const int messageInterval  = 10*1000; // ms 
+const int pidWindowLenght = 10*1000; // ms
 
-TemperatureSensor<6,1> temperatureSensor; //Running avg over 6 observations 1 at a time 
+TemperatureSensor<2,1> temperatureSensor; //Running avg over 6 observations 1 at a time 
 HeatingElement heatingElement;
 RestClient restClient(messageInterval);
 PID pidController;
+
 Chrono measurementClock;
 Chrono controlClock;
+Chrono messagingClock;
 
+float setTemp = 0;
 
 bool currently_activated = false;
 
@@ -27,33 +30,30 @@ void setup(void) {
     temperatureSensor.setup();
     heatingElement.setup();
     pidController.setup();
- 
 }
 
 void loop(void) {
-    if(controlClock.hasPassed(controlInterval)){
-      controlLoop();
-    }
-    restClient.process();
-}
+    
+    heatingElement.process(); //Execute controller as fast as possible
 
-void controlLoop(){
-
-    //Measure every n seconds
-    if (measurementClock.hasPassed(measurementInterval)){
+    if (measurementClock.elapsed() > measurementInterval){
+        float dt = measurementClock.elapsed();
         measurementClock.restart();
-
         //Reset PID if newly activated
-        if (state.is_activated && !currently_activated){
-            currently_activated = true;
+        if (state.is_activated != !currently_activated || state.override_pid || setTemp != state.target_temperature){
+            currently_activated = state.is_activated;
             pidController.reset();
         }
 
         temperatureSensor.process();
-        pidController.process(controlInterval/1000.0);
+        dt += (float) measurementClock.elapsed();
+        pidController.process(dt/1000.0);
     }
-    
-    if (state.is_activated) {
-        heatingElement.process();
+
+    if(controlClock.elapsed() > controlInterval){
+        messagingClock.restart();
+        restClient.process();
     }
+
 }
+
