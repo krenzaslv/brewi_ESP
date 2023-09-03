@@ -14,7 +14,7 @@ struct State {
   float temperatureExp= 22.0;
   float temperatureKalman = 22.0;
 
-  float target_temperature = 30.0;
+  float target_temperature = 57.0;
   float pid_gain = 0;
   float pd_gain = 0;
   float pi_gain = 0;
