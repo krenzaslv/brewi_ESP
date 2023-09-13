@@ -33,28 +33,32 @@ void setup(void) {
   temperatureSensor.setup();
   heatingElement.setup();
   pidController.setup();
+  restClient.setup();
 
+  
   //Run intensive rest communication on seperate thread to not mess with control loop
   xTaskCreatePinnedToCore(
     messagingLoop,
     "messagingLoop",
-    10000,          /* Stack size in words */
-    NULL,           /* Task input parameter */
-    1,              /* Priority of the task */
-    &messagingTask, /* Task handle. */
-    0);             /* Core where the task should run */
+    100000,          // Stack size in words 
+    NULL,           // Task input parameter 
+    1,              // Priority of the task 
+    &messagingTask, // Task handle. 
+    0);             // Core where the task should run 
   delay(500);
-
+  
+  
   //Run intensive rest communication on seperate thread to not mess with control loop
   xTaskCreatePinnedToCore(
     controlLoop,
     "controlLoop",
-    10000,        /* Stack size in words */
-    NULL,         /* Task input parameter */
-    1,            /* Priority of the task */
-    &controlTask, /* Task handle. */
-    1);           /* Core where the task should run */
+    10000,        // Stack size in words 
+    NULL,         // Task input parameter 
+    1,            // Priority of the task 
+    &controlTask, // Task handle. 
+    1);           // Core where the task should run 
   delay(500);
+  
 }
 
 void controlLoop(void* param) {
@@ -82,7 +86,6 @@ void controlLoop(void* param) {
 }
 
 void messagingLoop(void* param) {
-  restClient.setup();
   while (true) {
     if (messagingClock.elapsed() > messageInterval) {
       Serial.println("Messaging...");
@@ -92,4 +95,5 @@ void messagingLoop(void* param) {
   }
 }
 
-void loop(void) {}
+void loop(void) {
+}

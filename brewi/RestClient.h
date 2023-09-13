@@ -25,9 +25,9 @@ public:
         String responseBody = http_.responseBody();
         if (responseBody != "{}") state.from_json(responseBody);
       }
-    } catch (const std::exception &e) {
+    } catch (String e){
       Serial.print("Couldn't send/receive to server with exeption: ");
-      Serial.println(e.what());
+      Serial.println(e);
     }
   }
 
