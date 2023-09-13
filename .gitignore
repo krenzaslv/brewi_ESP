@@ -11,3 +11,6 @@ CTestTestfile.cmake
 _deps
 
 brewi/Config.h
+brewi/debug.cfg 
+brewi/debug_custom.json 
+brewi/debug.svd

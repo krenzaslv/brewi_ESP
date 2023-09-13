@@ -6,7 +6,7 @@
 struct State {
 
   bool is_heating = false;
-  bool is_activated = false;
+  bool is_activated = true;
   bool override_pid = false;
 
   float temperature = 22.0;
@@ -29,6 +29,8 @@ struct State {
 
   float duty_cycle = 0;
   int pidWindowLenght = 10*1000; 
+
+  bool inMenu = false;
 
 
   std::string to_json() const{

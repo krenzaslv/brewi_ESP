@@ -5,7 +5,7 @@
 #include <DallasTemperature.h>
 #include <OneWire.h>
 
-#define TEMPERATURE_BUS 4
+#define TEMPERATURE_BUS D2
 
 template<int N>
 class MovingAverageFilter{
@@ -95,17 +95,21 @@ template<int N, int M> ///Running average over last N measurements with M measur
 class TemperatureSensor {
 
   public:
-    TemperatureSensor() : oneWire_{TEMPERATURE_BUS}, sensors_(&oneWire_) {}
+    TemperatureSensor() : oneWire_{TEMPERATURE_BUS}, sensors_(&oneWire_) {
+    }
 
     void setup() {
+      
       sensors_.begin();
-     // sensors_.getAddress(deviceAddress_, 0);
+      //sensors_.getAddress(deviceAddress_, 0);
       //sensors_.setResolution(deviceAddress_, 12);
       sensors_.setResolution(12);
       sensors_.requestTemperatures();
       float temp =  sensors_.getTempCByIndex(0);
       expFilter_.setup(temp);
       kalmanFilter_.setup(temp);
+      Serial.println("setup");
+      Serial.println(temp);
 
       clock_.restart();
     }
@@ -116,17 +120,26 @@ class TemperatureSensor {
       for (size_t i = 0; i < M; ++i) {
           sensors_.requestTemperatures();
       //    avgTemperature += sensors_.getTempC(deviceAddress_);
+          float temp = sensors_.getTempCByIndex(0);
+          if(temp == DEVICE_DISCONNECTED_C){
+            Serial.println("No device connected");
+          }
           avgTemperature +=  sensors_.getTempCByIndex(0);
         if(i == 0) state.temperature = avgTemperature;
         if (M>1) delay(10);
       }
       avgTemperature/=(float) M;
-      float currentTmp = movingAvgFilter_.getAvg();
-      if(avgTemperature > 1.5*currentTmp || avgTemperature < 0.5*currentTmp) return;
+      
+      //float currentTmp = movingAvgFilter_.getAvg();
+      // if(avgTemperature > 1.5*currentTmp || avgTemperature < 0.5*currentTmp) return;
 
       state.temperatureAvg = movingAvgFilter_.add(avgTemperature);
       state.temperatureExp = expFilter_.next(avgTemperature);
       state.temperatureKalman = kalmanFilter_.next(avgTemperature,((float) clock_.elapsed())/1000);
+      Serial.print("temperature: ");
+      Serial.println(state.temperature);
+      Serial.print("temperature avg:");
+      Serial.println(state.temperatureAvg);
       clock_.restart();
     }
 

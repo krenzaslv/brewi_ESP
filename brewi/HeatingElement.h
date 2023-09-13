@@ -3,7 +3,7 @@
 #include "State.h"
 #include "Chrono.h"
 
-#define HEATING_BUS 12
+#define HEATING_BUS D3
 
 class HeatingElement{
 
@@ -33,8 +33,21 @@ class HeatingElement{
     int counter = 0;
 
     void processDutyCycle(){
+      /*
+      Serial.println(state.is_activated);
+      if(state.is_activated){
+        activateHeatingElement(false);
+        state.is_activated = false;
+        delay(100);
+      }else{
+        activateHeatingElement(true);
+        delay(100);
+        state.is_activated = true;
+      }
+      */
+      
       bool on = false;
-
+      
       if(state.override_pid) {
         on = state.is_activated;
       } else if(timer_.elapsed() < int(state.pid_gain*1e3) && state.is_activated) {
@@ -43,6 +56,7 @@ class HeatingElement{
 
       activateHeatingElement(on);
       state.is_heating = on;
+      
     }
 
     void activateHeatingElement(bool on){
