@@ -60,7 +60,7 @@ class HeatingElement{
     }
 
     void activateHeatingElement(bool on){
-      if(on) {
+      if(on && state.temperatureAvg < state.target_temperature + 1.0) {
         digitalWrite(HEATING_BUS, HIGH);
       } else {
         digitalWrite(HEATING_BUS, LOW);
